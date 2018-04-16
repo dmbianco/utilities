@@ -4,6 +4,7 @@ import time
 import itertools
 import random
 from wrappers import yield_func_wrapper
+import hashlib
 
 
 def id_from_datetime(datetime_format="%Y-%m-%d_%H:%M:%S"):
@@ -89,6 +90,30 @@ def generate_random_id(n_ch=4, already_generated_ids=None):
             continue
 
 
+def hash_object_to_id(s, only_last=0):
+    supported_types = (str, int, dict, float, list, set, bool)
+    stringable_types = (str, int, float, bool, list)
+    try:
+        assert type(s) in supported_types
+    except:
+        try:
+            s = str(s)
+        except:
+            return 1
+    if any([isinstance(s, tp) for tp in stringable_types]):
+        new_s = str(s)
+    elif isinstance(s, set):
+        new_s = str(sorted(s))
+    elif isinstance(s, dict):
+        new_s = str([(x,s[x]) for x in sorted(s)])
+    new_s = new_s.encode()
+    hashed_s = hashlib.sha224(new_s).hexdigest()
+    if only_last == 0:
+        return hashed_s
+    else:
+        return hashed_s[-only_last:]
+
+
 
 if __name__ == "__main__":
 
@@ -97,7 +122,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Test the functionalities of the class')
 
     function_list = ("id_from_datetime", "id_from_timestamp", "n_characters_ids",
-                     "generate_random_id")
+                     "generate_random_id", "hash_object_to_id")
     for x in function_list:
         cmd = '--{}'.format(x)
         help = 'Test {} function.'.format(x)
@@ -149,8 +174,16 @@ if __name__ == "__main__":
     if args["generate_random_id"]:
         print("TESTING generate_random_id n_ch=5")
         l = yield_func_wrapper(generate_random_id, n_ch=5)
-        print(l, "\n")
+        print(l)
         print("TESTING generate_random_id n_ch=20")
         l = yield_func_wrapper(generate_random_id, n_ch=20)
         print(l, "\n")
 
+    if args["hash_object_to_id"]:
+        print("TESTING hash_object_to_id")
+        print("String 'hello': {}".format(hash_object_to_id("hello")))
+        print("Int 10: {}".format(hash_object_to_id(10)))
+        print("Float 3.14: {}".format(hash_object_to_id(3.14)))
+        print("List [0,1]: {}".format(hash_object_to_id([0,1])))
+        print("Dict 1:0: {}".format(hash_object_to_id({1:0})))
+        print("Dict 1:0 (last 5): {}".format(hash_object_to_id({1:0}, only_last=5)))
