@@ -1,11 +1,16 @@
-import timeit
+import time
 import datetime
 import os
+import sys
 
 
 def pretty_print_ts(ts, format="%Y-%m-%d %H:%M:%S"):
     dt = datetime.datetime.fromtimestamp(ts)
     return datetime.datetime.strftime(dt, format=format)
+
+
+def get_current_timestamp(datetime_format="%Y-%m-%d_%H:%M:%S"):
+    return datetime.datetime.strftime(datetime.datetime.now(), datetime_format)
 
 
 class MyTimer():
@@ -36,10 +41,14 @@ class MyTimer():
 
 
 class MyLogger():
+
+    modes = ("file", "stdout", "get_log")
     
-    def __init__(self, log_dir="", log_filepath="", name=""):
+    def __init__(self, log_dir="", log_filepath="", name="", logging_mode="stdout"):
         self.name = name
         self.timer = MyTimer(id_="logger_" + name)
+        assert logging_mode in self.modes
+        self.logging_mode = logging_mode
         if log_filepath:
             if os.path.isfile(log_filepath):
                 os.remove(log_filepath)
@@ -52,10 +61,15 @@ class MyLogger():
                 self.log_file = log_filepath
 
 
-    def logit(self, message=""):
-        with open(self.log_file, "a") as fout:
-            fout.write(message + "\n")
-            fout.flush()
+    def logit(self, log=""):
+        if self.logging_mode == "file":
+            with open(self.log_file, "a") as fout:
+                fout.write(log + "\n")
+                fout.flush()
+        elif self.logging_mode == "stdout":
+            sys.stdout.write(log + "\n")
+        elif self.logging_mode == "get_log":
+            return log
 
 
     def start_task(self, name="", description=""):
@@ -77,4 +91,26 @@ class MyLogger():
 
     def get_log_filename(self):
         return "log.txt"
+
+
+
+if __name__ == "__main__":
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Test the functionalities of the class')
+
+    parser.add_argument('--mylogger', help='Test MyLogger class.', required=False,
+                        action='store_false')
+
+    args = parser.parse_args()
+    test_mylogger = args.mylogger
+
+    if test_mylogger:
+        logger = MyLogger(name="test", log_dir=".")
+        logger.start_task("Test sleep", "2 seconds sleep")
+        time.sleep(2)
+        logger.end_task()
+
+
 
