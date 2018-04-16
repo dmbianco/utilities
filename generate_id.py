@@ -2,6 +2,8 @@ import string
 import datetime
 import time
 import itertools
+import random
+from wrappers import yield_func_wrapper
 
 
 def id_from_datetime(datetime_format="%Y-%m-%d_%H:%M:%S"):
@@ -13,7 +15,7 @@ def id_from_timestamp():
     return str(int(time.time()))
 
 
-def n_characters_run_id(pattern="U2_D1", already_generated_keys=None, sep=""):
+def n_characters_ids(pattern="U2_D1", already_generated_ids=None, sep="", random_mode=False):
     '''
     It generates a unique identifier.
     Pattern should be a string with the following pattern:
@@ -32,35 +34,59 @@ def n_characters_run_id(pattern="U2_D1", already_generated_keys=None, sep=""):
         assert len(pt) >= 1
         bag = []
         for p in pt:
-            print(p)
             assert p[0] in bag_of_chs
             assert p[1:].isdigit()
             assert int(p[1:]) > 0 and int(p[1:]) > 0
             ch = p[0]
             N = int(p[1:])
-            bag.extend([bag_of_chs[ch]]*N)
+            if not random_mode:
+                bag.extend([bag_of_chs[ch]]*N)
+            else:
+                l = []
+                random.seed(time.time())
+                for x in range(N):
+                    s = bag_of_chs[ch]
+                    l.append(''.join( random.sample(s,len(s)) ))
+                bag.extend(l)
         return bag
     
     bag = parse_pattern(pattern)
 
     try:
-        run_ids = set(already_generated_keys)
+        run_ids = set(already_generated_ids)
     except:
-        pass
-    finally:
         run_ids = None
-
+        
     for x in itertools.product(*bag):
         run_id = sep.join(x)
         if run_ids is not None and run_id not in run_ids:
             yield run_id
-        else:
+        elif run_ids is None:
             yield run_id
+        else:
+            continue
 
 
+def generate_random_id(n_ch=4, already_generated_ids=None):
+    '''
+    n_ch: the number of characters to generate.
+    '''
+    try:
+        run_ids = set(already_generated_ids)
+    except:
+        run_ids = None
 
-def generate_random_run_id(type="numeric", n=4):
-    pass
+    random.seed(time.time())
+    while True:
+        chs = string.ascii_uppercase + string.ascii_lowercase + string.digits
+        l = [random.choice(chs) for x in range(n_ch)]
+        run_id = "".join(l)
+        if run_ids is not None and run_id not in run_ids:
+            yield run_id
+        elif run_ids is None:
+            yield run_id
+        else:
+            continue
 
 
 
@@ -70,7 +96,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Test the functionalities of the class')
 
-    function_list = ("id_from_datetime", "id_from_timestamp", "n_characters_run_id")
+    function_list = ("id_from_datetime", "id_from_timestamp", "n_characters_ids",
+                     "generate_random_id")
     for x in function_list:
         cmd = '--{}'.format(x)
         help = 'Test {} function.'.format(x)
@@ -99,23 +126,31 @@ if __name__ == "__main__":
         print("Second id: {}".format(id_from_timestamp()))
         print()
 
-    if args["n_characters_run_id"]:
-        print("TESTING n_characters_run_id")
+    if args["n_characters_ids"]:
+        print("TESTING n_characters_ids")
         print("Base mode U2_D2")
-        i = 3
-        for id_ in n_characters_run_id(pattern="U2_D2"):
-            print(id_)
-            i -= 1
-            if i <= 0:
-                break
-        print()
+        l = yield_func_wrapper(n_characters_ids, pattern="U2_D2")
+        print(l)
 
-        i = 3
-        for id_ in n_characters_run_id(pattern="U2_D2"):
-            print(id_)
-            i -= 1
-            if i <= 0:
-                break
-        print()
-
+        print("Base mode U1_D1_L1")
+        l = yield_func_wrapper(n_characters_ids, pattern="U1_D1_L1")
+        print(l)
     
+        print("Already generated ['AA0', 'AA2'] mode U2_D1")
+        l = yield_func_wrapper(n_characters_ids, pattern="U2_D1", 
+                                already_generated_ids=['AA0', 'AA2'])
+        print(l)
+
+        print("Random mode mode U2_D1")
+        l = yield_func_wrapper(n_characters_ids, pattern="U2_D1", 
+                                already_generated_ids=['AA0', 'AA2'], random_mode=True)
+        print(l)
+
+    if args["generate_random_id"]:
+        print("TESTING generate_random_id n_ch=5")
+        l = yield_func_wrapper(generate_random_id, n_ch=5)
+        print(l, "\n")
+        print("TESTING generate_random_id n_ch=20")
+        l = yield_func_wrapper(generate_random_id, n_ch=20)
+        print(l, "\n")
+
