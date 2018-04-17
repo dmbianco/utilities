@@ -4,14 +4,6 @@ import os
 import sys
 from generate_id import id_from_timestamp, hash_object_to_id
 
-def pretty_print_ts(ts, format="%Y-%m-%d %H:%M:%S"):
-    dt = datetime.datetime.fromtimestamp(ts)
-    return datetime.datetime.strftime(dt, format=format)
-
-
-def get_current_timestamp(datetime_format="%Y-%m-%d_%H:%M:%S"):
-    return datetime.datetime.strftime(datetime.datetime.now(), datetime_format)
-
 
 class MyTimer():
 
@@ -40,15 +32,35 @@ class MyTimer():
             yield self.time() - self.last_tic
 
 
-class MyLogger():
+class Log():
 
-    modes = ("file", "stdout", "get_log")
-    
-    def __init__(self, log_dir="", log_filepath="", name="", logging_mode="stdout"):
+    logging_levels = ("DEBUGGING", "CRITIAL", "PROBLEM")
+
+    def __init__(self, level, name="", subname="", description=""):
+        pass
+
+
+class CriticalError(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+
+class MyLogger():
+    '''
+    Class for logging purposes.
+    The format of the logs is determined by log_format.
+    '''
+
+    modes = ("file", "stdout")
+    logging_levels = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
+    log_format = "{}|{}|{}|{}|{}"
+
+    def __init__(self, log_dir="", log_filepath="", name="", logging_mode="stdout", raise_critical=False):
         self.name = name
         self.timer = MyTimer(id_="logger_" + name)
         assert logging_mode in self.modes
         self.logging_mode = logging_mode
+        self.raise_critical = raise_critical
         if log_filepath:
             if os.path.isfile(log_filepath):
                 os.remove(log_filepath)
@@ -57,8 +69,12 @@ class MyLogger():
             if not os.path.isdir(log_dir):
                 raise FileNotFoundError
             else:
-                log_filepath = self.get_log_filename()
+                log_filepath = "log.txt"
                 self.log_file = log_filepath
+
+
+    def generate_log(self, dt, name="", subname="", level="DEBUG", description=""):
+        return self.log_format.format(dt, level, name, subname, description)
 
 
     def logit(self, log=""):
@@ -68,29 +84,52 @@ class MyLogger():
                 fout.flush()
         elif self.logging_mode == "stdout":
             sys.stdout.write(log + "\n")
-        elif self.logging_mode == "get_log":
-            return log
+
+        if self.raise_critical and "CRITICAL" in log:
+            raise CriticalError
 
 
-    def start_task(self, name="", description=""):
+    def start_task(self, task_name="", description=""):
         self.timer.tic()
-        self.current_task_name = name
-        dt = pretty_print_ts(self.timer.last_tic)
-        self.logit("{}|TASK START|{}|{}".format(dt, name, description))
+        self.current_task_name = task_name
+        dt = self.pretty_print_ts(self.timer.last_tic)
+        log = self.generate_log(dt, name="TASK START", subname=task_name, level="DEBUG", description=description)
+        self.logit(log)
 
 
     def end_task(self):
         duration = self.timer.toc()
-        dt = pretty_print_ts(self.timer.last_toc)
-        self.logit("{0:}|TASK END|{1:}|duration {2:0.4f} s".format(dt, self.current_task_name, duration))
+        dt = self.pretty_print_ts(self.timer.last_toc)
+        description = "duration {0:0.4f} s".format(duration)
+        log = self.generate_log(dt, name="TASK END", subname=self.current_task_name, level="DEBUG", description=description)
+        self.logit(log)
+
+
+    def check_condition(self, condition, condition_name=""):
+        dt = self.pretty_print_ts(self.timer.time())
+        if condition:
+            log = self.generate_log(dt, name="CHECK CONDITION", subname=condition_name, level="INFO",
+                                    description=str(condition))
+        else:
+            log = self.generate_log(dt, name="CHECK CONDITION", subname=condition_name, level="CRITICAL",
+                                    description=str(condition))
+        self.logit(log)
+
+
+    def log_message(self, name="", subname="", level="DEBUG", description=""):
+        dt = self.pretty_print_ts(self.timer.time())
+        log = self.generate_log(dt=dt, name=name, subname=subname, level=level, description=description)
+        self.logit(log)
 
 
     def __str__(self):
         return "Logger {}".format(self.name)
 
+    def pretty_print_ts(self, ts, format="%Y-%m-%d %H:%M:%S"):
+        dt = datetime.datetime.fromtimestamp(ts)
+        return datetime.datetime.strftime(dt, format=format)
 
-    def get_log_filename(self):
-        return "log.txt"
+
 
 
 class Task():

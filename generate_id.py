@@ -8,11 +8,17 @@ import hashlib
 
 
 def id_from_datetime(datetime_format="%Y-%m-%d_%H:%M:%S"):
+    '''
+    Return the current datetime as id.
+    '''
     dt = datetime.datetime.strftime(datetime.datetime.now(), datetime_format)
     return dt
 
 
 def id_from_timestamp():
+    '''
+    Return the current timestamp as id.
+    '''
     return str(int(time.time()))
 
 
@@ -91,6 +97,10 @@ def generate_random_id(n_ch=4, already_generated_ids=None):
 
 
 def hash_object_to_id(s, only_last=0):
+    '''
+    Given an object s, first the function transforms it to a string and then it
+    hashes it. Unordered types like sets and dictionaries are first sorted.
+    '''
     supported_types = (str, int, dict, float, list, set, bool)
     stringable_types = (str, int, float, bool, list)
     try:

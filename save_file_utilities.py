@@ -9,6 +9,13 @@ class FileManager():
         pass
 
 
+    def mkdir(self, path):
+        try:
+            os.mkdir(path)
+        except FileExistsError:
+            pass
+
+
     @staticmethod
     def get_current_timestamp(datetime_format="%Y-%m-%d_%H:%M:%S"):
         return datetime.datetime.strftime(datetime.datetime.now(), datetime_format)
@@ -20,7 +27,7 @@ class FileManager():
             return [f for f in os.listdir(dir)]
         else:
             return []
-    
+
     @staticmethod
     def clean_dir(dir, logging=None):
         '''
@@ -58,7 +65,7 @@ def get_completed_files(completed_file_path):
 
 def get_all_days_between(d1, d2, date_format=DATE_FORMAT):
     '''
-    It returns all the days between d1 and d2. 
+    It returns all the days between d1 and d2.
     date_format is the format of the aforementioned dates.
     '''
     def parse_date(d):
@@ -97,6 +104,7 @@ def extract_date_from_filename(filename, join_char="-"):
     filename[-1] = filename[-1].split(".")[0]
     return join_char.join(filename)
 
+
 def get_files_to_process(input_dir, output_dir=None, completed_file_path=None,
                          dates=None):
     input_files = list_files(input_dir)
@@ -112,7 +120,7 @@ def get_files_to_process(input_dir, output_dir=None, completed_file_path=None,
         completed_files = get_completed_files(completed_file_path)
     else:
         completed_files = []
-    
+
     res_files = set(input_files) - set(completed_files)
     return sorted(list(res_files))
 
@@ -167,5 +175,30 @@ def get_list_of_dates(start_date, end_date, dir=None):
 
 
 
-    
-    
+if __name__ == "__main__":
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Test the functionalities of the class')
+
+    function_list = ("id_from_datetime", "id_from_timestamp", "n_characters_ids",
+                     "generate_random_id", "hash_object_to_id")
+    for x in function_list:
+        cmd = '--{}'.format(x)
+        help = 'Test {} function.'.format(x)
+        parser.add_argument(cmd, help=help, required=False, action='store_true')
+    parser.add_argument("--test_all", help="Test all functions",
+                        required=False, action='store_true')
+
+    args = vars(parser.parse_args())
+    if args["test_all"]:
+        for x in args:
+            args[x] = True
+
+    if args["id_from_datetime"]:
+        print("TESTING id_from_datetime")
+        print("First id: {}".format(id_from_datetime()))
+        time.sleep(2)
+        print("Sleeping for 2 seconds.")
+        print("Second id: {}".format(id_from_datetime()))
+        print()
