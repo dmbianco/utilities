@@ -8,17 +8,13 @@ import hashlib
 
 
 def id_from_datetime(datetime_format="%Y-%m-%d_%H:%M:%S"):
-    '''
-    Return the current datetime as id.
-    '''
+    ''' Returns the current datetime as id. '''
     dt = datetime.datetime.strftime(datetime.datetime.now(), datetime_format)
     return dt
 
 
 def id_from_timestamp():
-    '''
-    Return the current timestamp as id.
-    '''
+    ''' Returns the current timestamp as id. '''
     return str(int(time.time()))
 
 
@@ -122,6 +118,13 @@ def hash_object_to_id(s, only_last=0):
         return hashed_s
     else:
         return hashed_s[-only_last:]
+
+
+def generate_random_string(length):
+    """ Generates a random string of numbers, lower- and uppercase chars. """
+    return ''.join( random.choice(
+                    string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                        for i in range(length) )
 
 
 
