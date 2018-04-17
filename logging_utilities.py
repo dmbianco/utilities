@@ -2,7 +2,7 @@ import time
 import datetime
 import os
 import sys
-
+from generate_id import id_from_timestamp, hash_object_to_id
 
 def pretty_print_ts(ts, format="%Y-%m-%d %H:%M:%S"):
     dt = datetime.datetime.fromtimestamp(ts)
@@ -93,6 +93,50 @@ class MyLogger():
         return "log.txt"
 
 
+class Task():
+
+    def __init__(self, id="", description=""):
+        if not id:
+            id = hash_object_to_id(id_from_timestamp, only_last=5)
+        self.id = id
+        self.description = description
+    
+    def __str__(self):
+        to_print = "TASK: {}".format(self.id)
+        if self.description:
+            to_print += "\n{}".format(self.description)
+        return to_print
+        
+        
+class Plan():
+
+    def __init__(self, id="", description="", subtasks=[]):
+        if not id:
+            id = hash_object_to_id(id_from_timestamp, only_last=5)
+        self.id = id
+        self.description = description
+        self.subtasks = subtasks
+
+
+    def add_subtasks(self, subtasks):
+        self.subtasks.extend(subtasks)
+
+
+    def print_plan(self):
+        to_print = self.__str__() + "\n"
+        for sub in self.subtasks:
+            to_print += sub.__str__() + "\n"
+        print(to_print)
+
+
+    def __str__(self):
+        to_print = "PLAN: {}".format(self.id)
+        if self.description:
+            to_print += "\n{}".format(self.description)
+        return to_print
+
+
+
 
 if __name__ == "__main__":
 
@@ -100,17 +144,33 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Test the functionalities of the class')
 
-    parser.add_argument('--mylogger', help='Test MyLogger class.', required=False,
-                        action='store_false')
+    function_list = ("plan", "mylogger")
+    for x in function_list:
+        cmd = '--{}'.format(x)
+        help = 'Test {} class.'.format(x)
+        parser.add_argument(cmd, help=help, required=False, action='store_true')
+    parser.add_argument("--test_all", help="Test all functions",
+                        required=False, action='store_true')
 
     args = parser.parse_args()
-    test_mylogger = args.mylogger
+    args = vars(parser.parse_args())
+    if args["test_all"]:
+        for x in args:
+            args[x] = True
 
-    if test_mylogger:
+    if args["mylogger"]:
         logger = MyLogger(name="test", log_dir=".")
         logger.start_task("Test sleep", "2 seconds sleep")
         time.sleep(2)
         logger.end_task()
 
+    
+    if args["plan"]:
+        subs = []
+        for x in range(3):
+            sub = Task(id=str(x), description="Subtask {}".format(x))
+            subs.append(sub)
+        plan = Plan(id="A1", description="Test plan", subtasks=subs)
+        plan.print_plan()
 
 
